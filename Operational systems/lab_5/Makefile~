@@ -1,0 +1,20 @@
+all: run
+
+run: libbst.so mainStat.o mainDyn.o
+	gcc -o run-stat mainStat.o -L. -libbst  -Wl,-rpath,.
+	gcc -o run-dyn mainDyn.o -ldl
+
+mainStat.o: mainStat.c
+	gcc -c  mainStat.c
+
+mainDyn.o: mainDyn.c
+	gcc -c  mainDyn.c
+
+bst.o: bst.c
+	gcc -c -fPIC  bst.c
+
+libbst.so: bst.o
+	gcc  -shared -o libbst.so bst.o
+
+clean:
+	rm -f *.o run-stat run-dyn *.so
