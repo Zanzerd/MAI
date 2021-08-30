@@ -1,0 +1,6 @@
+#makefile for child process
+out: main.o list.o proc_sort.o; gcc -o out main.o list.o proc_sort.o
+main.o: main.c udt.h; gcc -c main.c
+list.o: list.c udt.h; gcc -c list.c
+proc_sort.o: proc_sort.c udt.h; gcc -c proc_sort.c
+clean: ;rm -rf *.o out

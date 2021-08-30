@@ -1,0 +1,91 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
+// передавать оба пайпа в argv через exec (для этого использовать другой exec)
+int main() {
+    int pipe_fds[2];
+    int pipe_fds2[2];
+    int i, code;
+    char bufchar;
+    pid_t fork_res, child, parent;
+    int act[3];
+
+    if (pipe(pipe_fds) == 0) {
+	if(pipe(pipe_fds2) == -1)
+	    perror("pipe");
+	fork_res = fork();
+	if (fork_res == (pid_t)-1)
+	    perror("fork");
+	if (fork_res == 0) {
+	    printf("Дочерний процесс %d \n", getpid());
+	    close(pipe_fds[0]); // дочерний не читает из канала
+	    close(pipe_fds2[1]); // дочерний не пишет в канал обратной связи
+	    while(1) {
+	      for(i = 0; i < 3; i++)
+		    act[i] = 0;
+		printf("МЕНЮ:\n");
+		printf("1. Вставить элемент: [позиция] [значение]\n");
+		printf("2. Удалить элемент [позиция]\n");
+		printf("3. Печать списка\n");
+		printf("4. Размер списка\n");
+		printf("5. Сортировать список\n");
+		printf("6. Выход\n");
+		scanf("%d", &act[0]);
+		if (act[0] == 1) {
+		    printf("Введите позицию элемента: \n");
+		    scanf(" %d", &act[1]);
+		    printf("Введите значение элемента: \n");
+		    scanf(" %d", &act[2]);
+		}
+		if (act[0] == 2) {
+		    printf("Введите позицию элемента: \n");
+		    scanf(" %d", &act[1]);
+		}
+		if (act[0] < 1 || act[0] > 6)
+		    printf("Такого пункта меню не существует");
+		if(write(pipe_fds[1], act, sizeof(act)) < 0)
+		    perror("write");
+		if(read(pipe_fds2[0], &code, sizeof(int)) < 0)
+		    perror("read");
+		if (code == 1 || code == 0)
+		    continue;
+		else if (code == 2)
+		    exit(EXIT_SUCCESS);
+		else
+		    exit(EXIT_FAILURE);
+	    }
+	}
+	    else {
+		printf("Процесс-родитель: %d \n", getpid());
+		close(0); // родитель не читает стандартный ввод
+		close(pipe_fds[1]); // родитель не пишет в канал
+		close(pipe_fds2[0]); // родитель не читает из канала обратной связи
+		execve("/home/pankratz/Prog/OS/lab2/out", NULL, NULL);
+		perror("exec");
+	    }
+	    return 0;
+    }
+    else
+      perror("pipe");
+}
+
+
+/* #include <stdio.h> */
+/* #include <signal.h> */
+ 
+/* void sig_handler(int signo) */
+/* { */
+/*     if(signo == SIGTERM) */
+/*         printf("Пойман SIGTERM\n"); */
+/* } */
+ 
+/* int main(void) */
+/* { */
+/*     signal(SIGTERM, sig_handler);    /\* установка обработчика сигнала *\/ */
+/*     raise(SIGTERM);    /\* отправка сигнала самому себе *\/ */
+/*     return 0; */
+/* } */
